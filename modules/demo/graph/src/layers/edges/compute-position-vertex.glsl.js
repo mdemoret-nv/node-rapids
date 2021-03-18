@@ -45,7 +45,7 @@ void main(void) {
     targetPosition = vec3(0., 0., 1.);
 
     if (edge.x < numNodesLoaded) {
-        ivec2 xIdx = getTexCoord(edge.x);
+        ivec2 xIdx = getTexCoord(min(edge.x, edge.y));
         sourcePosition = vec3(
             texelFetch(nodeXPositions, xIdx, 0).x,
             texelFetch(nodeYPositions, xIdx, 0).x,
@@ -54,7 +54,7 @@ void main(void) {
     }
 
     if (edge.y < numNodesLoaded) {
-        ivec2 yIdx = getTexCoord(edge.y);
+        ivec2 yIdx = getTexCoord(max(edge.x, edge.y));
         targetPosition = vec3(
             texelFetch(nodeXPositions, yIdx, 0).x,
             texelFetch(nodeYPositions, yIdx, 0).x,
@@ -75,18 +75,15 @@ void main(void) {
         float eindex = float(bundle.x);
         float bcount = float(bundle.y);
 
-        float direction = mix(1.0, -1.0, step(1.0, mod(round(eindex * stroke / maxBundleSize), 2.0)));
+        // float direction = mix(1.0, -1.0, step(1.0, mod(round(eindex * stroke / maxBundleSize), 2.0)));
+        // float direction =  mix(1.0, -1.0, step(1.0, mod(bcount, 2.0)));
+        float direction = mod(float(min(edge.x, edge.y)), 2.0) == 0.0 ? -1.0 : 1.0;
+        direction = 1.0;
 
         // If all the edges in the bundle fit into maxBundleSize,
         // separate the edges without overlap via 'eindex * stroke'.
         // Otherwise allow edges to overlap.
-        float size = maxBundleSize - mix(
-            // Not enough edges to require squeezing them into 'maxBundleSize'
-            (eindex * stroke),
-            // Squeeze the edge to fit into 'maxBundleSize' pixels
-            (eindex / bcount) * maxBundleSize,
-            step(maxBundleSize * 2.0, bcount * stroke)
-        );
+        float size = maxBundleSize - (eindex / bcount) * maxBundleSize * 0.5;
 
         controlPoint = vec3((midp + (unit * size * direction)).xy, 0.);
     }

@@ -153,8 +153,8 @@ function centerOnBbox([minX, maxX, minY, maxY]) {
     const width = maxX - minX, height = maxY - minY;
     if ((width === width) && (height === height)) {
         const { outerWidth, outerHeight } = window;
-        const world = width > height ? width : height;
-        const screen = width > height ? outerWidth : outerHeight;
+        const world = outerWidth > outerHeight ? width : height;
+        const screen = outerWidth > outerHeight ? outerWidth : outerHeight;
         const zoom = world > screen ? -(world / screen) : (screen / world);
         return {
             minZoom: Number.NEGATIVE_INFINITY,
