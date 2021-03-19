@@ -40,12 +40,15 @@ ivec2 getTexCoord(uint id) {
 
 void main(void) {
 
+    uint source = min(edge.x, edge.y);
+    uint target = max(edge.x, edge.y);
+
     controlPoint = vec3(0., 0., 1.);
     sourcePosition = vec3(0., 0., 1.);
     targetPosition = vec3(0., 0., 1.);
 
-    if (edge.x < numNodesLoaded) {
-        ivec2 xIdx = getTexCoord(min(edge.x, edge.y));
+    if (source < numNodesLoaded) {
+        ivec2 xIdx = getTexCoord(source);
         sourcePosition = vec3(
             texelFetch(nodeXPositions, xIdx, 0).x,
             texelFetch(nodeYPositions, xIdx, 0).x,
@@ -53,8 +56,8 @@ void main(void) {
         );
     }
 
-    if (edge.y < numNodesLoaded) {
-        ivec2 yIdx = getTexCoord(max(edge.x, edge.y));
+    if (target < numNodesLoaded) {
+        ivec2 yIdx = getTexCoord(target);
         targetPosition = vec3(
             texelFetch(nodeXPositions, yIdx, 0).x,
             texelFetch(nodeYPositions, yIdx, 0).x,
@@ -70,20 +73,14 @@ void main(void) {
         vec3 unit = vec3(-diff.y, diff.x, 1.);
 
         float stroke = strokeWidth;
-        float maxBundleSize = length(targetPosition - sourcePosition) * 0.20;
+        float maxBundleSize = length(targetPosition - sourcePosition) * 0.25;
 
         float eindex = float(bundle.x);
         float bcount = float(bundle.y);
 
-        // float direction = mix(1.0, -1.0, step(1.0, mod(round(eindex * stroke / maxBundleSize), 2.0)));
-        // float direction =  mix(1.0, -1.0, step(1.0, mod(bcount, 2.0)));
-        float direction = mod(float(min(edge.x, edge.y)), 2.0) == 0.0 ? -1.0 : 1.0;
-        direction = 1.0;
+        float direction = 1.0; // all edges will bend in the same direction
 
-        // If all the edges in the bundle fit into maxBundleSize,
-        // separate the edges without overlap via 'eindex * stroke'.
-        // Otherwise allow edges to overlap.
-        float size = maxBundleSize - (eindex / bcount) * maxBundleSize * 0.5;
+        float size = mix(maxBundleSize * .5, maxBundleSize * 1.5, eindex / bcount);
 
         controlPoint = vec3((midp + (unit * size * direction)).xy, 0.);
     }

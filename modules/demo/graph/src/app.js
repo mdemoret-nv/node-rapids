@@ -1,4 +1,4 @@
-// Copyright (c) 2020, NVIDIA CORPORATION.
+// Copyright (c) 2020-2021, NVIDIA CORPORATION.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,46 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from 'react';
-import DeckGL from '@deck.gl/react';
-import { TextLayer } from '@deck.gl/layers';
-import { GraphLayer } from './layers/graph';
-import { OrthographicView, log } from '@deck.gl/core';
-import { createDeckGLReactRef } from '@rapidsai/deck.gl';
+import { log as deckLog } from '@deck.gl/core';
+import { log as lumaLog } from '@luma.gl/gltools';
 
+deckLog.level = 0;
+lumaLog.level = 0;
+deckLog.enable(false);
+lumaLog.enable(false);
+
+import { OrthographicView } from '@deck.gl/core';
+import { TextLayer } from '@deck.gl/layers';
+import DeckGL from '@deck.gl/react';
+import { createDeckGLReactRef } from '@rapidsai/deck.gl';
 import { as as asAsyncIterable } from 'ix/asynciterable/as';
 import { takeWhile } from 'ix/asynciterable/operators/takewhile';
+import React from 'react';
 
-log.enable(false);
+import { GraphLayer } from '@rapidsai/deck.gl';
 
-const composeFns = (fns) => function(...args) {
-    fns.forEach((fn) => fn && fn.apply(this, args));
-}
+import loadGraphData from './loader';
+
+const composeFns = (fns) => function (...args) { fns.forEach((fn) => fn && fn.apply(this, args)); }
 
 export class App extends React.Component {
     constructor(props, context) {
-        if (props.serverRendered) {
-            Object.assign(props, createDeckGLReactRef());
-        }
+        if (props.serverRendered) { Object.assign(props, createDeckGLReactRef()); }
         super(props, context);
         this._isMounted = false;
         this._deck = React.createRef();
         this.state = { graph: {}, autoCenter: true };
     }
-    componentWillUnmount() {
-        this._isMounted = false;
-    }
+    componentWillUnmount() { this._isMounted = false; }
     componentDidMount() {
         this._isMounted = true;
-
-        const loadGraphData = require(
-            process.env.REACT_APP_ENVIRONMENT !== 'browser'
-                ? this.props.url
-                    ? './services/remote'
-                    : './services/local'
-                : './services/triangle'
-        ).default;
-
         asAsyncIterable(loadGraphData(this.props))
             .pipe(takeWhile(() => this._isMounted))
             .forEach((state) => this.setState(state));
@@ -73,33 +66,33 @@ export class App extends React.Component {
                 onAfterRender={composeFns([onAfterRender, this.state.onAfterRender])}>
                 <GraphLayer
                     edgeStrokeWidth={2}
-                    edgeOpacity={.9}
+                    edgeOpacity={.5}
                     nodesStroked={true}
                     nodeFillOpacity={.5}
                     nodeStrokeOpacity={.9}
                     {...this.state.graph}
-                    />
+                />
                 {selectedParameter !== undefined ?
-                <TextLayer
-                    sizeScale={1}
-                    opacity={0.9}
-                    maxWidth={2000}
-                    pickable={false}
-                    backgroundColor={[0, 0, 0]}
-                    getTextAnchor='start'
-                    getAlignmentBaseline='top'
-                    getSize={(d) => d.size}
-                    getColor={(d) => d.color}
-                    getPixelOffset={(d) => [0, 0]}
-                    getPosition={(d) => this._deck.current.viewports[0].unproject(d.position)}
-                    data={Object.keys(params).map((key, i) => ({
-                        size: 15,
-                        text: i === selectedParameter
-                            ? `(${i}) ${params[key].name}: ${params[key].val}`
-                            : ` ${i}  ${params[key].name}: ${params[key].val}`,
-                        color: [255, 255, 255],
-                        position: [0, i * 20],
-                    }))}
+                    <TextLayer
+                        sizeScale={1}
+                        opacity={0.9}
+                        maxWidth={2000}
+                        pickable={false}
+                        backgroundColor={[46, 46, 46]}
+                        getTextAnchor='start'
+                        getAlignmentBaseline='top'
+                        getSize={(d) => d.size}
+                        getColor={(d) => d.color}
+                        getPixelOffset={(d) => [0, 0]}
+                        getPosition={(d) => this._deck.current.viewports[0].unproject(d.position)}
+                        data={Object.keys(params).map((key, i) => ({
+                            size: 15,
+                            text: i === selectedParameter
+                                ? `(${i}) ${params[key].name}: ${params[key].val}`
+                                : ` ${i}  ${params[key].name}: ${params[key].val}`,
+                            color: [255, 255, 255],
+                            position: [0, i * 15],
+                        }))}
                     /> : null}
             </DeckGL>
         );
@@ -109,15 +102,14 @@ export class App extends React.Component {
 export default App;
 
 App.defaultProps = {
-    controller: {keyboard: false},
-    onWebGLInitialized,
+    controller: { keyboard: false },
     onHover: onDragEnd,
     onDrag: onDragStart,
     onDragEnd: onDragEnd,
     onDragStart: onDragStart,
     initialViewState: {
         zoom: 1,
-        target: [0,0,0],
+        target: [0, 0, 0],
         minZoom: Number.NEGATIVE_INFINITY,
         maxZoom: Number.POSITIVE_INFINITY,
     },
@@ -127,7 +119,7 @@ App.defaultProps = {
                 color: [...[46, 46, 46].map((x) => x / 255), 1]
             }
         })
-    ],
+    ]
 };
 
 function onDragStart({ index }, { target }) {
@@ -138,23 +130,17 @@ function onDragStart({ index }, { target }) {
 
 function onDragEnd({ index }, { target }) {
     if (target) {
-        [window, target].forEach((element) => (element.style || {}).cursor = ~index ? 'pointer' :  'default');
-    }
-}
-
-function onWebGLInitialized(gl) {
-    if (gl.opengl) {
-        gl.enable(gl.PROGRAM_POINT_SIZE);
-        gl.enable(gl.POINT_SPRITE);
+        [window, target].forEach((element) =>
+            (element.style || {}).cursor = ~index ? 'pointer' : 'default');
     }
 }
 
 function centerOnBbox([minX, maxX, minY, maxY]) {
     const width = maxX - minX, height = maxY - minY;
     if ((width === width) && (height === height)) {
-        const { outerWidth, outerHeight } = window;
-        const world = outerWidth > outerHeight ? width : height;
-        const screen = outerWidth > outerHeight ? outerWidth : outerHeight;
+        const { outerWidth, outerHeight, devicePixelRatio } = window;
+        const world = (outerWidth > outerHeight ? width : height);
+        const screen = (outerWidth > outerHeight ? outerWidth : outerHeight) / devicePixelRatio;
         const zoom = world > screen ? -(world / screen) : (screen / world);
         return {
             minZoom: Number.NEGATIVE_INFINITY,
@@ -164,6 +150,3 @@ function centerOnBbox([minX, maxX, minY, maxY]) {
         };
     }
 }
-
-import { log as deckLog } from '@deck.gl/core';
-deckLog.level = 0;
