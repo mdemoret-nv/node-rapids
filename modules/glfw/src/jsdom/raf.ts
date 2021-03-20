@@ -23,7 +23,7 @@ export function installAnimationFrame(window: any) {
   let b = new Map<(time: number) => any, any>();
 
   let callbacks                             = a;
-  let animationframe: NodeJS.Immediate|null = null;
+  let animationframe: any = null;
 
   return Object.assign(window, {requestAnimationFrame, cancelAnimationFrame});
 
@@ -34,14 +34,14 @@ export function installAnimationFrame(window: any) {
         if (callbacks.size === 0) {
           const af       = animationframe;
           animationframe = null;
-          clearImmediate(af);
+          clearTimeout(af);
         }
       }
     }
   }
 
   function requestAnimationFrame(cb: (time: number) => any = () => {}) {
-    if (animationframe === null) { animationframe = setImmediate(flushAnimationFrame); }
+    if (animationframe === null) { animationframe = setTimeout(flushAnimationFrame, 10); }
     callbacks.set(cb, null);
     return cb;
   }

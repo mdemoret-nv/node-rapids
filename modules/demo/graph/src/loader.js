@@ -207,6 +207,9 @@ export default async function* loadGraphData(props = {}) {
       // If user paused rendering, wait a bit and continue
       rendered = new Promise((r) => (onAfterRender = () => setTimeout(r, 50)));
     } else {
+      if (Series.new({ type: new Float32, data: positions }).isNaN().any()) {
+        // throw new Error("Some SHIT is NaN!");
+      }
       // Compute positions from the previous positions
       positions = new Float32Buffer(graph.forceAtlas2({
         positions: positions && positions.length === n * 2 ? positions.buffer : undefined,
@@ -232,7 +235,7 @@ export default async function* loadGraphData(props = {}) {
       graph: graphDesc,
       params: layoutParams,
       selectedParameter: layoutParams.controlsVisible.val ? selectedParameter : undefined,
-      bbox,
+      // bbox,
       autoCenter: layoutParams.autoCenter.val,
       onAfterRender
     };

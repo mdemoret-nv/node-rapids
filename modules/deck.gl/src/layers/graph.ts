@@ -439,7 +439,7 @@ const textLayerProps = (_props: any, state: any) => ({
   opacity: 1.0,
   maxWidth: -1,
   pickable: false,
-  backgroundColor: [46, 46, 46],
+  backgroundColor: _props.labelBackgroundColor,
   getTextAnchor: 'start',
   getAlignmentBaseline: 'top',
   fontFamily: 'sans-serif, sans',

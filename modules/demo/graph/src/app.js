@@ -46,7 +46,8 @@ export class App extends React.Component {
     this._isMounted = true;
     asAsyncIterable(loadGraphData(this.props))
       .pipe(takeWhile(() => this._isMounted))
-      .forEach((state) => this.setState(state));
+      .forEach((state) => this.setState(state))
+      .catch(console.error.bind(console));
   }
   render() {
     const { onAfterRender, ...props } = this.props;
@@ -81,9 +82,11 @@ export class App extends React.Component {
           nodesStroked={true}
           nodeFillOpacity={.5}
           nodeStrokeOpacity={.9}
+          nodeStrokeRatio={.5}
           getNodeLabels={getNodeLabels}
           getEdgeLabels={getEdgeLabels}
           labels={this.state.labels}
+          labelBackgroundColor={[0, 0, 0]}
           {...this.state.graph}
         />
         {viewport && selectedParameter !== undefined ?
@@ -92,7 +95,7 @@ export class App extends React.Component {
             opacity={0.9}
             maxWidth={2000}
             pickable={false}
-            backgroundColor={[46, 46, 46]}
+            backgroundColor={[0, 0, 0]}
             getTextAnchor='start'
             getAlignmentBaseline='top'
             getSize={(d) => d.size}
@@ -131,7 +134,7 @@ App.defaultProps = {
   views: [
     new OrthographicView({
       clear: {
-        color: [...[46, 46, 46].map((x) => x / 255), 1]
+        color: [...[0, 0, 0].map((x) => x / 255), 1]
       }
     })
   ]
@@ -154,8 +157,8 @@ function centerOnBbox([minX, maxX, minY, maxY]) {
   const width = maxX - minX, height = maxY - minY;
   if ((width === width) && (height === height)) {
     const { outerWidth, outerHeight, devicePixelRatio } = window;
-    const world = (outerWidth > outerHeight ? width : height);
-    const screen = (outerWidth > outerHeight ? outerWidth : outerHeight) / devicePixelRatio;
+    const world = (width > height ? width : height);
+    const screen = (width > height ? outerWidth : outerHeight) / devicePixelRatio;
     const zoom = world > screen ? -(world / screen) : (screen / world);
     return {
       minZoom: Number.NEGATIVE_INFINITY,
@@ -205,12 +208,13 @@ function getEdgeLabels({ x, y, coordinate, edgeId, props, layer }) {
   if (props.data.edges.attributes.edgeData) {
     props.labels.length = 2;
     const [minX, , , maxY] = layer.context.viewport.getBounds();
+    const text = props.data.edges.attributes.edgeData.getValue(edgeId).trimEnd();
     props.labels[1] = {
-      size, color,
-      position: [0, 0],
-      offset: [0, -size],
+      size: size * 1.5,
+      color,
+      offset: [20, -20 - ((size + 3) * 1.5 * ((text.match(/\n/ig) || []).length + 1))],
       position: [minX, maxY],
-      text: props.data.edges.attributes.edgeData.getValue(edgeId),
+      text: text,
     };
   }
   return props.labels;
