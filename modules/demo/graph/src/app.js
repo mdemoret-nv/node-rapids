@@ -47,7 +47,7 @@ export class App extends React.Component {
     asAsyncIterable(loadGraphData(this.props))
       .pipe(takeWhile(() => this._isMounted))
       .forEach((state) => this.setState(state))
-      .catch(console.error.bind(console));
+      .catch((e) => console.error(e));
   }
   render() {
     const { onAfterRender, ...props } = this.props;
@@ -156,9 +156,9 @@ function onDragEnd({ index }, { target }) {
 function centerOnBbox([minX, maxX, minY, maxY]) {
   const width = maxX - minX, height = maxY - minY;
   if ((width === width) && (height === height)) {
-    const { outerWidth, outerHeight, devicePixelRatio } = window;
+    const { outerWidth, outerHeight } = window;
     const world = (width > height ? width : height);
-    const screen = (width > height ? outerWidth : outerHeight) / devicePixelRatio;
+    const screen = (width > height ? outerWidth : outerHeight);
     const zoom = world > screen ? -(world / screen) : (screen / world);
     return {
       minZoom: Number.NEGATIVE_INFINITY,
